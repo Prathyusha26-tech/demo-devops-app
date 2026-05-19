@@ -1,0 +1,24 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: demo-pipeline
+
+spec:
+  tasks:
+    - name: clone-repo
+      taskSpec:
+        steps:
+          - name: clone
+            image: alpine/git
+            script: |
+              echo "Cloning repository"
+
+    - name: build-image
+      runAfter:
+        - clone-repo
+      taskSpec:
+        steps:
+          - name: build
+            image: alpine
+            script: |
+              echo "Building Docker image"
