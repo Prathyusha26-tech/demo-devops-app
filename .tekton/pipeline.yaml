@@ -1,5 +1,6 @@
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
+
 metadata:
   name: demo-pipeline
 
@@ -13,12 +14,53 @@ spec:
             script: |
               echo "Cloning repository"
 
-    - name: build-image
-      runAfter:
-        - clone-repo
-      taskSpec:
-        steps:
-          - name: build
-            image: alpine
-            script: |
-              echo "Building Docker image"
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerBinding
+
+metadata:
+  name: demo-binding
+
+spec:
+  params:
+    - name: gitrevision
+      value: $(body.head_commit.id)
+
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+
+metadata:
+  name: demo-template
+
+spec:
+  params:
+    - name: gitrevision
+
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1beta1
+      kind: PipelineRun
+
+      metadata:
+        generateName: demo-pipeline-run-
+
+      spec:
+        pipelineRef:
+          name: demo-pipeline
+
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+
+metadata:
+  name: demo-listener
+
+spec:
+  serviceAccountName: pipeline
+
+  triggers:
+    - bindings:
+        - ref: demo-binding
+
+      template:
+        ref: demo-template
